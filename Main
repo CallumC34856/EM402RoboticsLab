@@ -1,0 +1,281 @@
+%% Differential Drive Robot
+close all
+clear
+
+%% Parameters In Question
+
+% Velocity and Wheel Base of the Robot
+Wheel_Base = 120;
+Wheel_Radius = 10;
+Instanteneous_Velocity = 20;
+Left_Wheel_Velocity = Instanteneous_Velocity;
+Right_Wheel_Velocity = Instanteneous_Velocity;
+
+% Starting Position of the Robot
+Initial_X = -250;
+Initial_Y = -250;
+Initial_Angle_Theta = 0;
+
+% Parameters of the Wheel Encoder
+Encoder_Variance = 0.1;
+Encoder_Frequency = 10;
+Encoder_Period = 1/Encoder_Frequency;
+
+% Beacon Parameters
+Beacon_1_Position = [2500, 2500, 1000];
+Beacon_2_Position = [-2500, 2500, 1000];
+Beacon_3_Position = [2500, -2500, 1000];
+Beacon_Variance = 20^2;
+
+% Starting Position of the Robot
+X = Initial_X;
+Y = Initial_Y;
+Angle_Theta = Initial_Angle_Theta;
+
+% Computing the Current Position of the Robot
+X_Current_Position =  (Left_Wheel_Velocity/2 + Right_Wheel_Velocity/2) * Encoder_Period;
+Y_Current_Position = (Left_Wheel_Velocity/2 + Right_Wheel_Velocity/2) * Encoder_Period;
+
+% Counter for Robot Trajectory
+Counter = 1;
+X_Trajectory(Counter, :) = X;
+Y_Trajectory(Counter, :) = Y;
+Theta_Angle(Counter, :) = 0;
+
+%% Question 1: On-Rails Path
+%Loop for generating the robot's path
+
+% Since there are 7 Horizontal Movements of the raster Scan, this is
+% the limit set on the loop
+
+for i = 1:7
+    Initial_X = X; Initial_Y = Y; Initial_Angle_Theta = 0;
+        
+    if i < 7
+        % Determines whether the robot is moving to the left or right
+        if mod(i, 2) == 1
+            % If the Robot is Moving Horizontally
+            while abs(X - Initial_X) < 2000
+                Counter = Counter + 1; 
+                Left_Wheel_Velocity = Instanteneous_Velocity; Right_Wheel_Velocity = Instanteneous_Velocity; 
+                Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+                X = X + X_Current_Position; X_Trajectory(Counter, :) = X; Y_Trajectory(Counter, :) = Y; 
+                Theta_Angle(Counter, :) = Angle_Theta;
+            end
+            
+            % If the Robot is Turning
+            while Angle_Theta - Initial_Angle_Theta < pi/2
+                Counter = Counter + 1; 
+                Left_Wheel_Velocity = -Instanteneous_Velocity; Right_Wheel_Velocity = Instanteneous_Velocity; 
+                Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+                X_Trajectory(Counter, :) = X; Y_Trajectory(Counter, :) = Y; 
+                Angle_Theta = Angle_Theta + (((Right_Wheel_Velocity - Left_Wheel_Velocity) / Wheel_Base) * Encoder_Period); Theta_Angle(Counter, :) = Angle_Theta;
+            end
+            
+            % If the Robot is Moving Vertically
+            while (Y - Initial_Y) < 150
+                Counter = Counter + 1; 
+                Left_Wheel_Velocity = Instanteneous_Velocity; Right_Wheel_Velocity = Instanteneous_Velocity; 
+                Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+                Y = Y + Y_Current_Position; X_Trajectory(Counter, :) = X; Y_Trajectory(Counter, :) = Y; 
+                Theta_Angle(Counter, :) = Angle_Theta;
+            end
+            
+            % If the Robot is Turning
+            while Angle_Theta - Initial_Angle_Theta < pi
+                Counter = Counter + 1; 
+                Left_Wheel_Velocity = -Instanteneous_Velocity; Right_Wheel_Velocity = Instanteneous_Velocity; 
+                Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+                X_Trajectory(Counter, :) = X; Y_Trajectory(Counter, :) = Y; 
+                Angle_Theta = Angle_Theta + (((Right_Wheel_Velocity - Left_Wheel_Velocity) / Wheel_Base) * Encoder_Period); Theta_Angle(Counter, :) = Angle_Theta;
+            end
+        else
+            
+            % If the Robot is Moving Horizontally
+            while abs(X - Initial_X) < 2000
+                Counter = Counter + 1; 
+                Left_Wheel_Velocity = Instanteneous_Velocity; Right_Wheel_Velocity = Instanteneous_Velocity; 
+                Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+                X = X - X_Current_Position; X_Trajectory(Counter, :) = X; Y_Trajectory(Counter, :) = Y; 
+                Theta_Angle(Counter, :) = Angle_Theta;
+            end
+            
+            % If the Robot is Turning
+            while Angle_Theta - Initial_Angle_Theta > pi/2
+                Counter = Counter + 1; 
+                Left_Wheel_Velocity = Instanteneous_Velocity; Right_Wheel_Velocity = -Instanteneous_Velocity; 
+                Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+                X_Trajectory(Counter, :) = X; Y_Trajectory(Counter, :) = Y; 
+                Angle_Theta = Angle_Theta + (((Right_Wheel_Velocity - Left_Wheel_Velocity) / Wheel_Base) * Encoder_Period); Theta_Angle(Counter, :) = Angle_Theta; 
+            end
+            
+            % If the Robot is Moving Vertically
+            while (Y - Initial_Y) < 150
+                Counter = Counter + 1; 
+                Left_Wheel_Velocity = Instanteneous_Velocity; Right_Wheel_Velocity = Instanteneous_Velocity; 
+                Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+                X_Trajectory(Counter, :) = X; Y = Y + Y_Current_Position;  Y_Trajectory(Counter, :) = Y;
+                Theta_Angle(Counter, :) = Angle_Theta;
+            end
+            
+            % If Robot is Turning
+            while Angle_Theta - Initial_Angle_Theta > 0
+                Counter = Counter + 1; 
+                Left_Wheel_Velocity = Instanteneous_Velocity; Right_Wheel_Velocity = -Instanteneous_Velocity; 
+                Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+                X_Trajectory(Counter, :) = X; Y_Trajectory(Counter, :) = Y;  
+                Angle_Theta = Angle_Theta + (((Right_Wheel_Velocity - Left_Wheel_Velocity) / Wheel_Base) * Encoder_Period); Theta_Angle(Counter, :) = Angle_Theta;
+            end
+        end
+    else
+        % This Section is for the Final Horizontal Movement of the Robot.
+        while abs(X - Initial_X) < 2000
+            Counter = Counter + 1; 
+            Left_Wheel_Velocity = Instanteneous_Velocity; Right_Wheel_Velocity = Instanteneous_Velocity; 
+            Speed_Of_Robot_Wheels(Counter, :) = [Left_Wheel_Velocity, Right_Wheel_Velocity];
+            X = X + X_Current_Position; X_Trajectory(Counter, :) = X; Y_Trajectory(Counter, :) = Y; 
+            Theta_Angle(Counter, :) = Angle_Theta; 
+        end
+    end
+end
+
+%% Question 2: Robot with Variance 
+% Trajectory estimate with added noise
+% Generating a Random Noise in the Encoder Based off of the Variance using
+% the random function Ensures Each Wheel has Different Noise
+Encoder_Noise_Left = sqrt(Encoder_Variance) * randn(Counter, 1);  
+Encoder_Noise_Right = sqrt(Encoder_Variance) * randn(Counter, 1);  
+
+% Variables for Encoder Left and Right Wheels.
+Encoder_Error_Left = Encoder_Noise_Left;
+Encoder_Error_Right = Encoder_Noise_Right;
+
+% Compute left and right wheel errors
+Left_Wheel_Error = Speed_Of_Robot_Wheels(1:Counter, 1) + Encoder_Error_Left;
+Right_Wheel_Error = Speed_Of_Robot_Wheels(1:Counter, 2) + Encoder_Error_Right;
+
+% Initialize variables for robot position with added noise
+Initialise_X_Question_2 = -250;
+Initialise_Y_Question_2 = -250;
+Angle_Theta = 0; 
+
+% Loop to update robot position with added noise
+for jj = 1:length(X_Trajectory)
+    % Noise Position Represents (X, Y, Theta)
+    Noise_Position_Of_Robot(jj, 1:3) = [Initialise_X_Question_2, Initialise_Y_Question_2, Angle_Theta];
+
+    % Update x, y, and theta based on noisy wheel speeds
+    Initialise_X_Question_2 = Noise_Position_Of_Robot(jj, 1) + (Left_Wheel_Error(jj)/2 + Right_Wheel_Error(jj)/2) * cos(Noise_Position_Of_Robot(jj, 3)) * Encoder_Period;                                     
+    Initialise_Y_Question_2 = Noise_Position_Of_Robot(jj, 2) + (Left_Wheel_Error(jj)/2 + Right_Wheel_Error(jj)/2) * sin(Noise_Position_Of_Robot(jj, 3)) * Encoder_Period;                                              
+    Angle_Theta = Noise_Position_Of_Robot(jj, 3) + ((Right_Wheel_Error(jj) - Left_Wheel_Error(jj)) / Wheel_Base) * Encoder_Period;                                       
+end
+
+
+%% Question 3: Beacon Estimating Robot Position
+% Creating Variable for Beacon Estimating the Robot. Needs x, y, z, theta
+% due to the beacon being elevated in the z axis
+Rail_Position = [X_Trajectory Y_Trajectory zeros(length(X_Trajectory), 1) Theta_Angle];
+
+% Function which Calculated Distance From the Beacon to the Robot (x,y,z of
+% robot,Position is position of beacon and the Beacon Variance
+Beacon_Distance_Function = @(x, y, z, Position, Variance) sqrt((x - Position(1)).^2 + (y - Position(2)).^2 + (z - Position(3)).^2) + sqrt(Variance) * randn(length(x), 1);
+
+% Distance from Beacon to Robot With Noise
+Beacon_1_Noise = Beacon_Distance_Function(Rail_Position(:, 1), Rail_Position(:, 2), Rail_Position(:, 3), Beacon_1_Position, Beacon_Variance);
+Beacon_2_Noise = Beacon_Distance_Function(Rail_Position(:, 1), Rail_Position(:, 2), Rail_Position(:, 3), Beacon_2_Position, Beacon_Variance);
+Beacon_3_Noise = Beacon_Distance_Function(Rail_Position(:, 1), Rail_Position(:, 2), Rail_Position(:, 3), Beacon_3_Position, Beacon_Variance);
+
+X_Position_Beacon = zeros(length(X_Trajectory), 1);
+Y_Position_Beacon = zeros(length(X_Trajectory), 1);
+
+% Estimating Positions For All Points in Robot Path
+for j = 1:length(X_Trajectory)
+    X_Position_Beacon(j) = (Beacon_1_Noise(j)^2 - Beacon_2_Noise(j)^2 + Beacon_2_Position(1)^2 - Beacon_1_Position(1)^2 + Beacon_2_Position(2)^2 - Beacon_1_Position(2)^2) / (2 * (Beacon_2_Position(1) - Beacon_1_Position(1)));
+    Y_Position_Beacon(j) = (Beacon_1_Noise(j)^2 - Beacon_3_Noise(j)^2 + Beacon_3_Position(1)^2 - Beacon_1_Position(1)^2 + Beacon_3_Position(2)^2 - Beacon_1_Position(2)^2) / (2 * (Beacon_3_Position(2) - Beacon_1_Position(2)));
+end
+
+%% Question 4: EKF Position Estimate
+
+% Matrixes needed for Extended Kalman Filter (EKF) Ive explained what the
+% purpose of each matrix is
+
+
+% Process noise covariance matrix for EKF.
+P_Process_Noise_Matrix = diag([1 1 1]); 
+% Measurement noise covariance matrix for EKF.
+R_Measurment_Matrix = diag([Beacon_Variance Beacon_Variance Beacon_Variance]);
+% Measurement noise covariance matrix for encoder.
+Q_Measurement_Encoder_Noise_Matrix = diag([Encoder_Variance Encoder_Variance]); 
+% Error covariance matrix for EKF.
+P_Error_Matrix = zeros(4,4);  
+% Initial state estimate from dead-reckoning (Part 2)
+Estimate_Previous_State = Rail_Position(1,:);
+% Kalman gain matrix for state update.
+Kalman_Matrix = zeros(length(X_Trajectory),4); 
+
+% Loop through each point in the robot's trajectory to apply the Extended Kalman Filter
+for j = 1:length(X_Trajectory)
+
+    Estimate_Current_State = [Estimate_Previous_State(1) + ((Left_Wheel_Error(j)/2) + (Right_Wheel_Error(j)/2))*cos(Estimate_Previous_State(4))* Encoder_Period; Estimate_Previous_State(2) + ((Left_Wheel_Error(j)/2) + (Right_Wheel_Error(j)/2))*sin(Estimate_Previous_State(4))* Encoder_Period; Estimate_Previous_State(3); Estimate_Previous_State(4) + ((Right_Wheel_Error(j) - Left_Wheel_Error(j)) / Wheel_Base)* Encoder_Period; ];                                            
+
+    State_Transition_Matrix = [1 0 0 -(1/Wheel_Base)*(Right_Wheel_Error(j)+Left_Wheel_Error(j))*sin(Estimate_Previous_State(4)); 0 1 0 (1/Wheel_Base)*(Right_Wheel_Error(j)+Left_Wheel_Error(j))*cos(Estimate_Previous_State(4)); 0 0 1 0; 0 0 0 1 ];
+
+    Noise_Influence_Matrix = [cos(Estimate_Previous_State(4))*Encoder_Period/2  (1/2)*sin(Estimate_Previous_State(4))*Encoder_Period; (1/2)*cos(Estimate_Previous_State(4))*Encoder_Period  (1/2)*sin(Estimate_Previous_State(4))*Encoder_Period; 0 0;(Encoder_Period/Wheel_Base) (Encoder_Period/Wheel_Base)];
+
+    L1 = sqrt((Estimate_Current_State(1) - Beacon_1_Position(1))^2 + (Estimate_Current_State(2) - Beacon_1_Position(2))^2 + (Estimate_Current_State(3) - Beacon_1_Position(3))^2);
+    L2 = sqrt((Estimate_Current_State(1) - Beacon_2_Position(1))^2 + (Estimate_Current_State(2) - Beacon_2_Position(2))^2 + (Estimate_Current_State(3) - Beacon_2_Position(3))^2);
+    L3 = sqrt((Estimate_Current_State(1) - Beacon_3_Position(1))^2 + (Estimate_Current_State(2) - Beacon_3_Position(2))^2 + (Estimate_Current_State(3) - Beacon_3_Position(3))^2);
+
+    Jacobian_Matrix = [ (Estimate_Current_State(1)-Beacon_1_Position(1))/L1 (Estimate_Current_State(2)-Beacon_1_Position(2))/L1 (Estimate_Current_State(3)-Beacon_1_Position(3))/L1 0; (Estimate_Current_State(1)-Beacon_2_Position(1))/L2 (Estimate_Current_State(2)-Beacon_2_Position(2))/L2 (Estimate_Current_State(3)-Beacon_2_Position(3))/L2 0; (Estimate_Current_State(1)-Beacon_3_Position(1))/L3 (Estimate_Current_State(2)-Beacon_3_Position(2))/L3 (Estimate_Current_State(3)-Beacon_3_Position(3))/L3 0 ];
+
+    Actual_Measurements = [Beacon_1_Noise(j); Beacon_2_Noise(j); Beacon_3_Noise(j)];
+
+    Expected_Measurements = [ Beacon_Distance_Function(Estimate_Current_State(1), Estimate_Current_State(2), Estimate_Current_State(3), Beacon_1_Position, 0); Beacon_Distance_Function(Estimate_Current_State(1), Estimate_Current_State(2), Estimate_Current_State(3), Beacon_2_Position, 0); Beacon_Distance_Function(Estimate_Current_State(1), Estimate_Current_State(2), Estimate_Current_State(3), Beacon_3_Position, 0)];
+
+    P_Error_Matrix = State_Transition_Matrix*P_Error_Matrix*State_Transition_Matrix' + Noise_Influence_Matrix*Q_Measurement_Encoder_Noise_Matrix*Noise_Influence_Matrix';  
+    Kalman_Gain = P_Error_Matrix*Jacobian_Matrix'*inv(Jacobian_Matrix*P_Error_Matrix*Jacobian_Matrix' + P_Process_Noise_Matrix*R_Measurment_Matrix*P_Process_Noise_Matrix'); 
+    Updated_Estimate = Estimate_Current_State + Kalman_Gain*(Actual_Measurements-Expected_Measurements) ;  
+    Kalman_Matrix(j,1:4) = Updated_Estimate(1:4)';  
+
+    P_Error_Matrix = (eye(4)-Kalman_Gain*Jacobian_Matrix)*P_Error_Matrix;  
+    Estimate_Previous_State = Updated_Estimate;  
+end
+
+%% Plotting
+
+% Plots
+figure(1);
+hold on
+
+plot(X_Trajectory,Y_Trajectory,'b--','LineWidth',2,'DisplayName','Ideal Path')
+%plot(Noise_Position_Of_Robot(:,1),Noise_Position_Of_Robot(:,2),'r','LineWidth',2,'DisplayName','Encoder Noise')
+%plot (X_Position_Beacon, Y_Position_Beacon,'k.', 'DisplayName', 'Beacon Estimates')
+plot(Kalman_Matrix(:,1),Kalman_Matrix(:,2),'k','LineWidth',3, 'DisplayName', 'Extended Kalman Filter')
+xlabel('X (mm)');
+ylabel('Y (mm)');
+title('Enocder Noise and EKF Estimation');
+legend('Ideal Path', 'Extended Kalman Filter');
+grid on
+
+%{
+figure(2)
+
+plot3(Beacon_1_Position(1), Beacon_1_Position(2), Beacon_1_Position(3), 'r*', 'MarkerSize', 20); hold on;
+plot3(Beacon_2_Position(1), Beacon_2_Position(2), Beacon_2_Position(3), 'k*', 'MarkerSize', 20);
+plot3(Beacon_3_Position(1), Beacon_3_Position(2), Beacon_3_Position(3), 'b*', 'MarkerSize', 20);
+plot3(X_Trajectory, Y_Trajectory, zeros(size(X_Trajectory)), 'k-', 'LineWidth', 2);
+xlabel('X (mm)');
+ylabel('Y (mm)');
+zlabel('Z (mm)');
+legend('Beacon 1', 'Beacon 2', 'Beacon 3', 'Ideal Path');
+grid on;
+
+xlim([-3000, 3000]);
+ylim([-3000, 3000]);
+zlim([0, 1250]);
+xlabel('X (mm)');
+ylabel('Y (mm)');
+title('Raster Scan Plot with Beacon Positions');
+legend('show');
+grid on;
+%}
